@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Beautiful Timer Landing Page</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body, html {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(145deg, #161e1b 60%, #01330e 100%);
+      /* fallback for old browsers: */
+      /* background: #161e1b; */
+    }
+    .container {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .logo-cyber {
+      width: 650px;
+      height: 300px;
+      object-fit: contain;
+      margin-bottom: 32px;
+      margin-top: 24px;
+    }
+  
+    h1 {
+      margin-top: 0;
+      margin-bottom: 16px;
+      font-family: 'Courier New', Courier, monospace;
+      letter-spacing: 0.08em;
+    }
+    .timer {
+      font-size: 3em;
+      font-weight: bold;
+      margin: 22px 0;
+      padding: 10px 24px;
+      border-radius: 10px;
+      color: #fff;
+      background: rgba(0,0,0,0.35);
+      text-shadow: 0 0 7px #03ff2dcc;
+      border: 2px solid #20ff6d77;
+      transition: background 0.2s;
+    }
+    .timer-over {
+      background: rgba(255,0,60,0.43);
+      color: #ff5050;
+      border-color: #ff505077;
+      text-shadow: none;
+      animation: shake .35s;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(2px); }
+      50% { transform: translateX(-2px);}
+      75% { transform: translateX(2px);}
+    }
+    .timer-controls {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+    }
+    .timer-controls button {
+      background: #00000088;
+      color: #05ff41;
+      border: 2px solid #05ff41;
+      padding: 12px 28px;
+      font-size: 1.22em;
+      margin: 5px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Courier New', Courier, monospace;
+      font-weight: bold;
+      transition: all 0.17s;
+      box-shadow: 0 0 5px #00ff4120;
+    }
+    .timer-controls button:active {
+      background: #05ff41;
+      color: #171717;
+      transform: scale(0.97);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="logo_cyber.png" class="logo-cyber">
+    <div class="timer" id="timerDisplay">01:00</div>
+    <div class="timer-controls">
+      <button onclick="startTimer()" id="startBtn">Start</button>
+      <button onclick="pauseTimer()" id="pauseBtn">Pause</button>
+      <button onclick="resetTimer()" id="resetBtn">Reset</button>
+    </div>
+  </div>
+  <script>
+    let timerInterval;
+    let remainingSeconds = 60;
+    let running = false;
+    let over = false;
+
+    function formatTime(secs) {
+      const m = Math.floor(secs / 60).toString().padStart(2, '0');
+      const s = (secs % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function updateTimerDisplay() {
+      const display = document.getElementById('timerDisplay');
+      display.textContent = formatTime(remainingSeconds);
+      if (remainingSeconds === 0) {
+        display.classList.add("timer-over");
+        display.textContent = "TIME OVER!";
+      } else {
+        display.classList.remove("timer-over");
+      }
+    }
+
+    function startTimer() {
+      if (running || over) return;
+      running = true;
+      timerInterval = setInterval(() => {
+        if (remainingSeconds > 0) {
+          remainingSeconds--;
+          updateTimerDisplay();
+        }
+        if (remainingSeconds === 0) {
+          running = false;
+          over = true;
+          clearInterval(timerInterval);
+          updateTimerDisplay();
+        }
+      }, 1000);
+    }
+
+    function pauseTimer() {
+      running = false;
+      clearInterval(timerInterval);
+    }
+
+    function resetTimer() {
+      running = false;
+      over = false;
+      clearInterval(timerInterval);
+      remainingSeconds = 60;
+      updateTimerDisplay();
+    }
+
+    updateTimerDisplay();
+  </script>
+</body>
+</html>
