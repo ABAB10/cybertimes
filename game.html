@@ -12,9 +12,20 @@
       padding: 0;
       position: relative;
       overflow: hidden;
-      background: linear-gradient(145deg, #161e1b 60%, #01330e 100%);
-      /* fallback for old browsers: */
-      /* background: #161e1b; */
+      /* The video is the true background, so don't use a strong gradient, but keep a fallback color if video fails */
+      background: #111c14;
+    }
+    .background-video {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: -1;
+      opacity: 0.32;
+      pointer-events: none;
+      user-select: none;
+      background: #000;
     }
     .container {
       position: relative;
@@ -91,8 +102,13 @@
   </style>
 </head>
 <body>
+  <!-- Utiliser hailuo2.mp4 comme background vidéo -->
+  <video class="background-video" id="bg-video" autoplay loop muted playsinline poster="Hailuo2.mp4" aria-hidden="true">
+    <source src="Hailuo2.mp4" type="video/mp4">
+    <!-- Image d'attente si la vidéo ne peut pas être chargée -->
+  </video>
   <div class="container">
-    <img src="logo_cyber.png" class="logo-cyber">
+    <img src="logo_cyber.png" class="logo-cyber" alt="CyberTimes Logo">
     <div class="timer" id="timerDisplay">01:00</div>
     <div class="timer-controls">
       <button onclick="startTimer()" id="startBtn">Start</button>
