@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberTimes</title>
+    <style>
+        :root {
+            --primary: #00ff41; /* Hacker Green */
+            --bg: #0d0d0d;
+            --dark: #1a1a1a;
+            --danger: #ff3333;
+            --highlight: #003b0f;
+            --blue: #00b8ff;
+        }
+        html, body {
+            height: 100%;
+            /* Prevent scrollbars always */
+            overflow: hidden;
+        }
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--bg);
+            color: var(--primary);
+            text-align: center;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            min-height: 95vh;
+            position: relative;
+            min-height: 100vh;
+            /* Prevent scrollbars from padding (mobile) */
+            box-sizing: border-box;
+            overflow: hidden !important;
+        }
+        /* Prevent scrollbars on the entire page */
+        * {
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+        }
+        *::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            background: transparent !important;
+        }
+        /* Background overlay image with opacity */
+        .background-img {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            z-index: -1;
+            pointer-events: none;
+            user-select: none;
+        }
+        h1 { text-transform: uppercase; border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-top: 0; }
+        .screen { display: none; flex: 1; flex-direction: column; justify-content: center; align-items: center; width: 100%; max-width: 600px; margin: 0 auto; }
+        .active { display: flex; }
+        
+        .card {
+            background: var(--dark);
+            border: 1px solid var(--primary);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            width: 90%;
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+            position: relative;
+        }
+        
+        /* Specific text styles */
+        .question-text { font-size: 1.1em; margin-bottom: 20px; font-weight: bold; line-height: 1.4; }
+        .word-text { font-size: 1.8em; font-weight: bold; color: #fff; text-transform: uppercase; margin: 10px 0; }
+        .hint-text { font-size: 0.85em; color: #888; margin-top: 15px; font-style: italic; border-top: 1px solid #333; padding-top: 10px;}
+        .answer-reveal { font-size: 0.9em; color: var(--primary); margin-top: 5px; font-weight: bold; }
+
+        /* Buttons */
+        button {
+            background: var(--dark);
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            padding: 12px 24px;
+            font-size: 1.1em;
+            margin: 8px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-family: inherit;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        button:active { background: var(--primary); color: var(--bg); transform: scale(0.98); }
+        .btn-wrong { border-color: var(--danger); color: var(--danger); }
+        .btn-wrong:active { background: var(--danger); color: var(--bg); transform: scale(0.98); }
+        .btn-blue { border-color: var(--blue); color: var(--blue); }
+        .btn-blue:active { background: var(--blue); color: var(--bg); transform: scale(0.98); }
+        .btn-small { padding: 8px 16px; font-size: 0.9em; }
+        .btn-rules { padding: 8px 16px; font-size: 0.9em; border-color: var(--danger); color: var(--danger); }
+        .btn-rules:active { background: var(--danger); color: var(--bg); transform: scale(0.98); }
+
+        /* Team config inputs */
+        input[type="text"] {
+            background: #000;
+            border: 1px solid var(--primary);
+            color: #fff;
+            padding: 8px;
+            font-family: inherit;
+            margin-bottom: 5px;
+            width: 80%;
+            text-align: center;
+        }
+        .team-setup { margin-bottom: 15px; padding: 10px; width: 90%; }
+
+        /* Timer and Score */
+        .timer { font-size: 3em; margin: 5px 0; color: #fff; font-weight: bold; }
+        .score-board { font-size: 1.2em; margin-bottom: 10px; color: #fff; }
+        .current-team-display { color: var(--primary); font-weight: bold; font-size: 1.3em; text-transform: uppercase; }
+        
+        /* Rules */
+        .rules-content { text-align: left; font-size: 0.9em; line-height: 1.5; }
+        .rules-content h3 { border-bottom: 1px solid var(--primary); padding-bottom: 5px; }
+
+        /* POPUP MODAL STYLES */
+        .custom-modal-bg {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* Center the pop-up using flexbox */
+        }
+        .custom-modal {
+            background: #222;
+            color: var(--primary);
+            border: 3px solid var(--primary);
+            border-radius: 16px;
+            box-shadow: 0 2px 18px #000, 0 0 10px #00ff4170;
+            min-width: 240px;
+            max-width: 94vw;
+            padding: 36px 30px 26px 20px;
+            text-align: center;
+            position: relative;
+            animation: fadeInScale 0.22s;
+            margin: auto; /* Extra guarantee of centering */
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
+        }
+        .custom-modal .winner {
+            font-size: 2.1em;
+            color: #fff;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+        .custom-modal .desc {
+            color: #ceffdd;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        .custom-modal .modal-btn {
+            display: inline-block;
+            font-size: 1.1em;
+            padding: 10px 30px;
+            margin-top: 22px;
+            border-radius: 6px;
+            border: 2px solid var(--primary);
+            background: var(--bg);
+            color: var(--primary);
+            cursor: pointer;
+            transition: all 0.16s;
+            font-family: inherit;
+        }
+        .custom-modal .modal-btn:active {
+            background: var(--primary);
+            color: var(--bg);
+        }
+        /* Time over style (added for red message in popup) */
+        .custom-modal .time-over-title {
+            font-size: 2.2em;
+            font-weight: bold;
+            color: var(--danger);
+            margin-bottom: 14px;
+            letter-spacing: 1px;
+        }
+        .custom-modal .time-over-msg {
+            color: #fff;
+            font-size: 1.08em;
+            margin-bottom: 10px;
+        }
+        @keyframes fadeInScale {
+            from { opacity:0; transform: scale(0.84);}
+            to { opacity:1; transform: scale(1);}
+        }
+        /* Ajoute un style pour rendre le logo-cyber clickable comme un bouton */
+        .logo-cyber-btn {
+            border: none;
+            background: none;
+            padding: 0;
+            cursor: pointer;
+            /* Remove focus outline and highlight for all states */
+            outline: none !important;
+            box-shadow: none !important;
+        }
+        .logo-cyber-btn:focus, 
+        .logo-cyber-btn:active {
+            outline: none !important;
+            background: none !important;
+            box-shadow: none !important;
+            filter: none !important;
+        }
+
+
+    </style>
+</head>
+<body>
+    <video id="bg-video" class="background-img" autoplay loop muted playsinline poster="hailuo-modify.mp4" aria-hidden="true">
+        <source src="hailuo-modify.mp4" type="video/mp4">
+        <!-- Background video fallback image if needed -->
+    </video>
+    <div id="screen-home" class="screen active">
+        <!-- logo_cyber.png as a button to go to cybertimes.html -->
+        <button class="logo-cyber-btn" onclick="window.location.href='cybertimes.html'" aria-label="Retour à la page d'accueil" tabindex="0">
+            <img src="logo_cyber.png" alt="CyberTimes Logo" class="logo-cyber" style="width:250px; height:100px; pointer-events: none;">
+        </button>
+        <div class="card">
+            <h3>Team Setup</h3>
+            
+            <div class="team-setup">
+                <input type="text" id="name-team-1" placeholder="Team 1 Name" value="Team Alpha">
+                <input type="text" id="players-team-1" placeholder="Players (e.g., Alice, Bob)">
+            </div>
+
+            <div class="team-setup">
+                <input type="text" id="name-team-2" placeholder="Team 2 Name" value="Team Beta">
+                <input type="text" id="players-team-2" placeholder="Players (e.g., Charlie, Dan)">
+            </div>
+
+            <div class="team-setup" id="setup-team-3" style="display:none;">
+                <input type="text" id="name-team-3" placeholder="Team 3 Name" value="Team Omega">
+                <input type="text" id="players-team-3" placeholder="Players (e.g., Eve, Frank)">
+            </div>
+
+            <button class="btn-small" onclick="toggleThirdTeam()" id="btn-add-team">➕​ Add a 3rd Team</button>
+        </div>
+        
+        <button style="box-shadow: 0 3px 14px #00ff4165;" onclick="startGame()">💻​ Play with Digital Cards</button>
+        <a href="chrono.html">
+            <button class="btn-blue" style="box-shadow: 0 3px 14px #0075ff65;">⏳ Timer Mode (Physical Deck)</button>
+        </a>
+        <button class="btn-rules" style="box-shadow: 0 3px 14px #ff45a465;" onclick="showRules()">📜 Game Rules</button>
+
+    </div>
+
+    <div id="screen-rules" class="screen">
+        <h1>Rules</h1>
+        <div class="card rules-content">
+            <h4 style="text-align: center;color: white;"><strong>Goal:</strong> Win the most cards in 2 rounds and win the game.</h4> 
+            <p><strong>TIMER:</strong> 60 seconds. When time's up, pass the phone to the next team.</p>
+            
+            <h3 style="text-align: center;color: blueviolet;">Round 1: True or False</h3>
+            <p>Read the question. Your team answers <em>True</em> or <em>False</em>.</p>
+            
+            <h3 style="text-align: center;color: blueviolet;">Round 2: Word to Guess</h3>
+            <p>Make your team guess the <strong>BOLD WORD</strong>.</p>
+            <p><em>Talk, mime ! But don't say the word.</em></p>
+            <p style="text-align: center;color: red;"><strong>Too hard? Read the question at the bottom as a hint.</strong></p>
+            <p style="text-align:center;color:gold;font-size:1.1em;font-weight:bold;">ATTENTION: Only 13 cards/words per round!</p>
+        </div>
+        <button onclick="showScreen('screen-home')">Back</button>
+    </div>
+
+    <div id="screen-game" class="screen">
+        <div class="score-board">
+            Turn: <span id="current-team-name" class="current-team-display">...</span>
+        </div>
+        <div style="font-size:0.8em; color:#ffffff;" id="current-players-list"></div>
+        
+        <div class="timer" id="timer">60</div>
+        
+        <div id="card-display" class="card">
+            </div>
+
+        <div id="controls">
+            <button class="btn-wrong" onclick="passCard()">Pass ❌</button>
+            <button onclick="validateCard()">Found ✅</button>
+        </div>
+        
+        <div id="start-turn-btn">
+            <button onclick="startTurn()">Start Timer ⏳</button>
+        </div>
+    </div>
+
+    <div id="screen-physical" class="screen">
+        <h2 id="phy-round-title">Round 1</h2>
+        <div class="score-board">
+             It's <span id="phy-team-name" class="current-team-display">...</span>'s turn
+        </div>
+        
+        <div class="timer" id="phy-timer">60</div>
+        
+        <div class="card">
+            <p id="phy-instruction">...</p>
+        </div>
+
+        <div id="phy-controls">
+            <button onclick="startPhysicalTimer()" id="btn-phy-start">Start Timer ⏳</button>
+            <button onclick="stopPhysicalTimer()" id="btn-phy-stop" style="display:none;" class="btn-wrong">STOP</button>
+        </div>
+
+        <div id="phy-end-turn-panel" style="display:none;" class="card">
+            <p style="font-size:1.5em; font-weight:bold; color:var(--danger);">Time's up! 🛑</p>
+            <p>Count your cards and pass the deck.</p>
+            <button onclick="nextPhysicalTurn()">Next Team ➡️</button>
+        </div>
+
+        <div style="margin-top: 30px; border-top: 1px solid #333; padding-top:10px; width: 100%;">
+            <p style="font-size: 0.8em; color: #888;">Deck empty?</p>
+            <button class="btn-small btn-blue" onclick="endPhysicalRound()">Back</button>
+        </div>
+    </div>
+
+    <div id="screen-end" class="screen">
+        <h1>Results</h1>
+        <div class="card" id="final-scores">
+            </div>
+        <h2 id="winner-text" style="color:#fff;"></h2>
+        <button onclick="location.reload()">Play Again</button>
+    </div>
+
+    <!-- MODAL FOR ROUND END -->
+    <div id="popup-modal-bg" style="display:none;">
+        <div id="popup-modal-content" class="custom-modal"></div>
+    </div>
+
+<script>
+    // --- DATA FOR DIGITAL GAME (50 Cards) ---
+    const allCardsData = [
+    // ... même contenu que l'original (questions 1 à 50, id 1..50, champ diff: "easy"/"hard" ...)
+    { "id": 1, "diff": "easy", "word": "Password", "q": "It is sufficient to use a dictionary word if it has 8 characters.", "a": false, "exp": "False. A good password should be long and include a mix of uppercase, lowercase, numbers, and symbols." },
+    { "id": 2, "diff": "easy", "word": "Phishing", "q": "Phishing is a technique that aims to steal your information through an email that looks legitimate.", "a": true, "exp": "True. It is a form of email-based scam." },
+    { "id": 3, "diff": "easy", "word": "Antivirus", "q": "An antivirus guarantees 100% that your computer will never be infected.", "a": false, "exp": "False. It offers essential protection, but new threats appear every day." },
+    { "id": 4, "diff": "easy", "word": "Firewall", "q": "A firewall is a physical wall that must be installed around your computer.", "a": false, "exp": "False. It is software or a device that acts as a barrier between your network and the internet." },
+    { "id": 5, "diff": "easy", "word": "Hameçonnage", "q": "A phishing email often contains spelling mistakes or urgent requests for personal information.", "a": true, "exp": "True. Attackers rely on distraction so you don't notice these signs." },
+    { "id": 6, "diff": "easy", "word": "VPN", "q": "A VPN has no impact on security and is only used to unlock foreign content.", "a": false, "exp": "False. Its primary function is to encrypt your connection to make it private and secure." },
+    { "id": 7, "diff": "easy", "word": "Update", "q": "It is recommended to indefinitely postpone software updates to avoid slowing down the computer.", "a": false, "exp": "False. Updates often fix important security flaws." },
+    { "id": 8, "diff": "easy", "word": "Encryption", "q": "Encryption is the action of transforming readable data into unreadable code.", "a": true, "exp": "True. It ensures confidentiality; only the key can reveal the data." },
+    { "id": 9, "diff": "easy", "word": "Malware", "q": "Malware can only spread if you voluntarily download a file.", "a": false, "exp": "False. It can also spread through links, emails, or vulnerabilities in outdated software." },
+    { "id": 10, "diff": "easy", "word": "2FA", "q": "Two-factor authentication adds a verification step (such as an SMS code) after the password.", "a": true, "exp": "True. It's a very effective additional security layer." },
+    { "id": 11, "diff": "easy", "word": "Ransomware", "q": "Ransomware blocks access to your files and demands a ransom to unlock them.", "a": true, "exp": "True. It is an attack that takes your data hostage." },
+    { "id": 12, "diff": "easy", "word": "Backup", "q": "It is useless to back up your data because hard drives never fail.", "a": false, "exp": "False. Backups are vital in case of failure, theft, or attack." },
+    { "id": 13, "diff": "easy", "word": "Public Wi-Fi", "q": "Public Wi-Fi networks are as secure as your home Wi-Fi.", "a": false, "exp": "False. They are often poorly secured and easy for attackers to snoop on." },
+    { "id": 14, "diff": "easy", "word": "URL", "q": "To know if a site is secure, you just need to check if its address starts with http://.", "a": false, "exp": "False. It must start with HTTPS:// (the 's' means 'secure') and display a padlock." },
+    { "id": 15, "diff": "easy", "word": "Social Engineering", "q": "Social engineering is the art of hacking a computer using only complex code commands.", "a": false, "exp": "False. It is the art of psychologically manipulating someone to reveal information." },
+    { "id": 16, "diff": "easy", "word": "Trojan Horse", "q": "A Trojan is a malicious program that pretends to be a legitimate application.", "a": true, "exp": "True. It is downloaded by the user without suspicion." },
+    { "id": 17, "diff": "easy", "word": "Password Manager", "q": "A password manager securely stores all your passwords.", "a": true, "exp": "True. It's one of the best ways to use unique, strong passwords for every service." },
+    { "id": 18, "diff": "easy", "word": "IP Address", "q": "An IP address is the unique identifier of your device on a network.", "a": true, "exp": "True. It routes data to the right device, like a digital postal address." },
+    { "id": 19, "diff": "easy", "word": "Cryptocurrency", "q": "Cryptocurrencies (like Bitcoin) are illegal because they are always used by hackers.", "a": false, "exp": "False. They are legal for normal transactions, although sometimes used by criminals." },
+    { "id": 20, "diff": "easy", "word": "HTTPS", "q": "HTTPS ensures that the connection between your browser and the website is encrypted.", "a": true, "exp": "True. The 'S' for 'Secure' is essential for online safety." },
+    { "id": 21, "diff": "easy", "word": "Decryption", "q": "Decryption is the action of transforming unreadable (encrypted) code back into readable text.", "a": true, "exp": "True. It is the opposite of encryption and requires a key." },
+    { "id": 22, "diff": "easy", "word": "Spam", "q": "Spam is an unsolicited email, and it can never contain security threats.", "a": false, "exp": "False. Spam can contain phishing attempts or malware." },
+    { "id": 23, "diff": "easy", "word": "Illegal Downloading", "q": "Illegal downloading only poses a copyright issue and is not a cybersecurity risk.", "a": false, "exp": "False. These files can easily be infected with viruses or spyware." },
+    { "id": 24, "diff": "easy", "word": "Biometrics", "q": "Biometrics (fingerprint, facial recognition) is less secure than a simple password.", "a": false, "exp": "False. It is considered more secure because it is difficult to steal or reproduce." },
+    { "id": 25, "diff": "easy", "word": "Security Key", "q": "A security key (special USB) is the safest method of two-factor authentication.", "a": true, "exp": "True. It is extremely hard to intercept, unlike SMS codes." },
+    { "id": 26, "diff": "easy", "word": "Spyware", "q": "Spyware is designed to collect information about you without your knowledge (passwords, history).", "a": true, "exp": "True. It then sends this data to a malicious third party." },
+    { "id": 27, "diff": "easy", "word": "File Encryption", "q": "Encrypting files on your computer makes data unreadable even if the computer is stolen.", "a": true, "exp": "True. A stolen device cannot reveal data without the decryption key." },
+    { "id": 28, "diff": "easy", "word": "Default Password", "q": "It is very dangerous to keep the default password on a new device (like a Wi-Fi router).", "a": true, "exp": "True. Attackers know the default passwords of most manufacturers." },
+    { "id": 29, "diff": "easy", "word": "IoT", "q": "Connected devices (watches, light bulbs) do not need protection because they contain no sensitive information.", "a": false, "exp": "False. They can be used as an entry point to access your home network." },
+    { "id": 30, "diff": "easy", "word": "Logout", "q": "It is safer to simply close the tab of your online banking than to click 'Logout'.", "a": false, "exp": "False. You should always log out properly to close the server session." },
+    { "id": 31, "diff": "easy", "word": "Cookie", "q": "Cookies are small files stored to remember your preferences and browsing habits.", "a": true, "exp": "True. Third-party cookies are often used for advertising tracking." },
+    { "id": 32, "diff": "easy", "word": "Ethical Hacking", "q": "The word 'Hacking' always refers to illegal and malicious activity.", "a": false, "exp": "False. There is also 'ethical hacking' used to find and fix security flaws." },
+    { "id": 33, "diff": "easy", "word": "Privacy Policy", "q": "The privacy policy tells you what data a site collects, uses, and stores.", "a": true, "exp": "True. It is important to know how your data is handled." },
+    { "id": 34, "diff": "easy", "word": "Identity Theft", "q": "Identity theft occurs when someone uses your personal information to pretend to be you.", "a": true, "exp": "True. It is a serious and common consequence of data theft." },
+    { "id": 35, "diff": "easy", "word": "Wi-Fi", "q": "Changing your Wi-Fi network name (SSID) automatically makes it more secure.", "a": false, "exp": "False. Only a strong password and encryption (WPA2/WPA3) affect security." },
+    { "id": 36, "diff": "easy", "word": "Data Theft", "q": "Data theft is only concerning when it involves banking information.", "a": false, "exp": "False. Any stolen personal data can be used for social engineering or identity theft." },
+    { "id": 37, "diff": "easy", "word": "Unknown USB Key", "q": "If you find a USB key, you should plug it into your computer immediately to identify its owner.", "a": false, "exp": "False. It is a common hacking trick. The USB may contain malware." },
+    { "id": 38, "diff": "easy", "word": "Disposable Email", "q": "Using a disposable email address helps reduce spam and phishing on your main address.", "a": true, "exp": "True. It keeps your main email off unwanted lists." },
+    { "id": 39, "diff": "easy", "word": "Unique Password", "q": "It is acceptable to use the same password for two unimportant accounts.", "a": false, "exp": "False. If one account is hacked, attackers will try the same password everywhere." },
+    { "id": 40, "diff": "easy", "word": "Incognito Mode", "q": "Incognito mode makes your activities invisible to your internet provider and the websites you visit.", "a": false, "exp": "False. It only prevents your browser from storing your local history and cookies." },
+
+    // --- NIVEAU 2 : EXPERT (10 CARTES) ---    
+    { "id": 41, "diff": "hard", "word": "Spoofing", "q": "Spoofing is a technique that consists of pretending to be someone else (identity or address fraud).", "a": true, "exp": "True. The goal is to gain the victim's trust." },
+    { "id": 42, "diff": "hard", "word": "Brute Force", "q": "A brute force attack consists of trying thousands of different passwords very quickly.", "a": true, "exp": "True. That's why long and complex passwords are essential." },
+    { "id": 43, "diff": "hard", "word": "MAC Address", "q": "A MAC address is a unique identifier assigned to the software on your computer.", "a": false, "exp": "False. A MAC address is assigned to the hardware network card of your device." },
+    { "id": 44, "diff": "hard", "word": "SSL Certificate", "q": "The SSL/TLS certificate is what enables the padlock icon in the browser address bar.", "a": true, "exp": "True. It ensures that the site is authentic and the communication is encrypted." },
+    { "id": 45, "diff": "hard", "word": "SQL Injection", "q": "SQL Injection is an attack that targets only video game servers.", "a": false, "exp": "False. It targets website databases to steal, modify, or destroy data." },
+    { "id": 46, "diff": "hard", "word": "Zero-day", "q": "A zero-day flaw is a vulnerability that the developer does not yet know about and has not fixed.", "a": true, "exp": "True. It is particularly dangerous because no security update is available." },
+    { "id": 47, "diff": "hard", "word": "Backdoor", "q": "A backdoor is a secret way for an attacker to bypass security and return to a system.", "a": true, "exp": "True. It is often installed after a first intrusion." },
+    { "id": 48, "diff": "hard", "word": "Pharming", "q": "Pharming is a technique that redirects you to a fake website even if you typed the correct address.", "a": true, "exp": "True. It is often harder to detect than phishing." },
+    { "id": 49, "diff": "hard", "word": "Open Source", "q": "An open-source software is more likely to have security flaws because ITS code is public.", "a": false, "exp": "False. Public code allows more experts to review and fix vulnerabilities quickly." },
+    { "id": 50, "diff": "hard", "word": "Logging", "q": "Logging is the recording of system activity, crucial for detecting intrusions afterward.", "a": true, "exp": "True. Logs help security experts understand what happened." }
+    ];
+    // --- SHARED VARIABLES ---
+    let gameDeck = [];
+    let round = 1; 
+    let deckInPlay = []; 
+    let foundCardIds = [];
+    let timerInterval;
+    let timeLeft = 60;
+    
+    // Team management
+    let teams = []; 
+    let currentTeamIndex = 0; 
+    let useThreeTeams = false;
+    let isPhysicalMode = false; // Flag to check which mode we are in
+
+    // --- UI HELPERS ---
+    function toggleThirdTeam() {
+        const div = document.getElementById('setup-team-3');
+        const btn = document.getElementById('btn-add-team');
+        if(div.style.display === 'none') {
+            div.style.display = 'block';
+            btn.innerText = '➖ Remove 3rd Team';
+            useThreeTeams = true;
+        } else {
+            div.style.display = 'none';
+            btn.innerText = '➕ Add a 3rd Team';
+            useThreeTeams = false;
+        }
+    }
+
+    function showRules() {
+        showScreen('screen-rules');
+    }
+
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function initTeams() {
+        teams = [];
+        teams.push({
+            name: document.getElementById('name-team-1').value || "Team 1",
+            players: document.getElementById('players-team-1').value || "",
+            score: 0
+        });
+        teams.push({
+            name: document.getElementById('name-team-2').value || "Team 2",
+            players: document.getElementById('players-team-2').value || "",
+            score: 0
+        });
+        if(useThreeTeams) {
+             teams.push({
+                name: document.getElementById('name-team-3').value || "Team 3",
+                players: document.getElementById('players-team-3').value || "",
+                score: 0
+            });
+        }
+        currentTeamIndex = 0;
+        round = 1;
+    }
+
+    // Custom shuffle for a copy to avoid sorting original
+    function shuffle(array) {
+        let arr = array.slice();
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    function showRoundEndModal(teamName, currentRound, teamScores, callback) {
+        let roundTitle = currentRound === 1 ? "True/False (Round 1)" : "Word to Guess (Round 2)";
+        let emoji = currentRound === 1 ? '🎉' : '🎉';
+        let heading = `${emoji} ${teamName} finished all their cards!`;
+        let desc = "";
+        if(currentRound === 1) {
+            desc = `Bravo! Your team found all cards for <b>Round 1 : True/False</b>!`;
+        } else {
+            desc = `Bravo! Your team found all cards for <b>Round 2 : Word to Guess</b>!`;
+        }
+
+        let scoresHtml = '';
+        if (teamScores && Array.isArray(teamScores)) {
+            scoresHtml += `<div class="desc" style="font-size:1.07em; margin-top:10px;"><b>Scores:</b><br>`;
+            for (const sc of teamScores) {
+                scoresHtml += `<span style="color:${getTeamColor(sc.idx)}">${sc.name}: <b>${sc.score}</b><br></span>`;
+            }
+            scoresHtml += '</div>';
+        }
+
+        const modal = document.getElementById('popup-modal-bg');
+        const content = document.getElementById('popup-modal-content');
+        content.innerHTML = `
+            <div class="winner">${heading}</div>
+            <div class="desc">${desc}</div>
+            ${scoresHtml}
+            <button class="modal-btn" id="modal-next-btn">Next</button>
+        `;
+        modal.style.display = "flex";
+        setTimeout(()=> {
+            document.getElementById('modal-next-btn').focus();
+        }, 150);
+        document.body.style.overflow = "hidden";
+        document.getElementById('modal-next-btn').onclick = function() {
+            modal.style.display = "none";
+            document.body.style.overflow = "";
+            if(typeof callback === 'function') callback();
+        }
+    }
+
+    function showTimeOverModal(callback) {
+        const modal = document.getElementById('popup-modal-bg');
+        const content = document.getElementById('popup-modal-content');
+        content.innerHTML = `
+            <div class="time-over-title">⏳ TIME-OVER</div>
+            <div class="time-over-msg">Time is up!<br>Pass the phone to the next team.</div>
+            <button class="modal-btn" id="modal-timeover-continue">OK</button>
+        `;
+        modal.style.display = "flex";
+        setTimeout(() => {
+            document.getElementById('modal-timeover-continue').focus();
+        }, 150);
+        document.body.style.overflow = "hidden";
+        document.getElementById('modal-timeover-continue').onclick = function () {
+            modal.style.display = "none";
+            document.body.style.overflow = "";
+            if (typeof callback === 'function') callback();
+        };
+    }
+
+    // ============================================
+    // === MODE 1: DIGITAL GAME LOGIC (MODIFIED)===
+    // ============================================
+
+    // Modified: Each round has only 15 cards to find/win, not 20 nor all
+    let CARDS_PER_ROUND = 13;
+    let winningScoreRound1 = CARDS_PER_ROUND;
+
+    function selectCardsForRound() {
+        // Pick 15 cards at random, mixed easy/hard (by default: 12 easy, 3 hard)
+        let easyCards = allCardsData.filter(c => c.diff === 'easy');
+        let hardCards = allCardsData.filter(c => c.diff === 'hard');
+        let selectedEasy = shuffle(easyCards).slice(0, 10);
+        let selectedHard = shuffle(hardCards).slice(0, 3);
+        return shuffle(selectedEasy.concat(selectedHard));
+    }
+
+    function startGame() {
+        isPhysicalMode = false;
+        initTeams();
+
+        // For round 1, pick 15 cards (12 easy, 3 hard random)
+        gameDeck = selectCardsForRound();
+        foundCardIds = [];
+        deckInPlay = gameDeck.filter(card => !foundCardIds.includes(card.id));
+
+        // Reset each team's score for Round 1
+        teams.forEach(t => t.score = 0);
+        round = 1; // just in case
+
+        showScreen('screen-game');
+        prepareTurn();
+    }
+
+    function prepareTurn() {
+        clearInterval(timerInterval);
+        timeLeft = 60;
+        document.getElementById('timer').innerText = timeLeft;
+
+        const team = teams[currentTeamIndex];
+        document.getElementById('current-team-name').innerText = team.name;
+        document.getElementById('current-team-name').style.color = getTeamColor(currentTeamIndex);
+        document.getElementById('current-players-list').innerText = team.players ? `(${team.players})` : "";
+
+        document.getElementById('controls').style.display = 'none';
+
+        let introText = `<h3>Round ${round}</h3>`;
+        introText += round === 1 ? `<p>True/False Quiz</p>` : `<p>Word to Guess</p>`;
+        introText += `<p>Cards left: ${deckInPlay.length} / ${CARDS_PER_ROUND}</p>`;
+        introText += `<p style="margin-top:20px;">It's <strong>${team.name}</strong>'s turn!</p>`;
+
+        // Add display of the score for this round, especially for Round 1
+        if (round === 1) {
+            introText += `<p><strong>${team.name}:</strong> ${team.score} / ${CARDS_PER_ROUND} points</p>`;
+        }
+
+        document.getElementById('card-display').innerHTML = introText;
+        document.getElementById('start-turn-btn').style.display = 'block';
+
+        // If no more cards, finish the round (should almost never happen)
+        if (deckInPlay.length === 0) endRound();
+    }
+
+    function startTurn() {
+        document.getElementById('start-turn-btn').style.display = 'none';
+        document.getElementById('controls').style.display = 'block';
+        nextCard();
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            document.getElementById('timer').innerText = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
+                showTimeOverModal(switchTeam);
+            }
+        }, 1000);
+    }
+
+    // Index of the current card being displayed (in deckInPlay)
+    let deckCurrentIndex = 0;
+
+    function nextCard() {
+        // If deckInPlay is empty: round ends for all (corner case).
+        if (deckInPlay.length === 0) {
+            clearInterval(timerInterval);
+            const team = teams[currentTeamIndex];
+            let scoresArr = teams.map((t, idx) => ({ name: t.name, score: t.score, idx }));
+            showRoundEndModal(
+                team.name,
+                round,
+                round === 1 ? scoresArr : undefined,
+                function () { endRound(); }
+            );
+            return;
+        }
+
+        // Clamp deckCurrentIndex to [0, deckInPlay.length-1]
+        if (deckCurrentIndex >= deckInPlay.length) deckCurrentIndex = 0;
+        if (deckCurrentIndex < 0) deckCurrentIndex = 0;
+
+        const card = deckInPlay[deckCurrentIndex];
+        const display = document.getElementById('card-display');
+
+        if (round === 1) {
+            display.innerHTML = `
+                <p class="question-text">${card.q}</p>
+                <div style="color: blueviolet;"><h3>${card.a ? 'TRUE' : 'FALSE'}</h3></div><br>
+                <div style="font-size:0.8em; color:white;">${card.exp}</div>
+                <div style="margin-top:16px; font-size:1.1em;color:#0f0;"><strong>Score: ${teams[currentTeamIndex].score} / ${CARDS_PER_ROUND}</strong></div>
+            `;
+        } else {
+            display.innerHTML = `
+                <p class="word-text">${card.word}</p>
+                <p class="hint-text">Hint: ${card.q} (${card.a ? 'True' : 'False'})</p>
+            `;
+        }
+    }
+
+    function validateCard() {
+        if (deckInPlay.length === 0) return;
+
+        // Mark found and remove from deckInPlay IMMEDIATELY (never shown again this round)
+        let foundCard = deckInPlay[deckCurrentIndex];
+        teams[currentTeamIndex].score++;
+        foundCardIds.push(foundCard.id);
+        deckInPlay.splice(deckCurrentIndex, 1);
+
+        // Check for win condition for round 1
+        if (round === 1 && teams[currentTeamIndex].score >= CARDS_PER_ROUND) {
+            // THIS TEAM WINS ROUND 1 INSTANTLY!
+            clearInterval(timerInterval);
+
+            // Prepare scores for modal
+            let scoresArr = teams.map((t, idx) => ({ name: t.name, score: t.score, idx }));
+
+            showRoundEndModal(
+                teams[currentTeamIndex].name + " (Victory!)",
+                round,
+                scoresArr,
+                function () { endRound(true); } // Pass flag indicating victory achieved
+            );
+            return;
+        }
+
+        // Stay within bounds
+        if (deckCurrentIndex >= deckInPlay.length) deckCurrentIndex = 0;
+
+        // If all cards exhausted, round ends: call normal endRound
+        if (deckInPlay.length === 0) {
+            clearInterval(timerInterval);
+            let scoresArr = teams.map((t, idx) => ({ name: t.name, score: t.score, idx }));
+            showRoundEndModal(
+                teams[currentTeamIndex].name,
+                round,
+                round === 1 ? scoresArr : undefined,
+                function () { endRound(); }
+            );
+        } else {
+            nextCard();
+        }
+    }
+
+    // Pass skips current card (won't revisit found cards: permanent for this round)
+    function passCard() {
+        if (deckInPlay.length === 0) return;
+        deckCurrentIndex++;
+        if (deckCurrentIndex >= deckInPlay.length) deckCurrentIndex = 0;
+        nextCard();
+    }
+
+    function switchTeam() {
+        currentTeamIndex = (currentTeamIndex + 1) % teams.length;
+        // deckInPlay only contains NOT found cards (never re-proposed found ones)
+        deckCurrentIndex = 0;
+        prepareTurn();
+    }
+
+    // Add option to endRound: didSomeoneWinWithScore (true if 15 good answers reached)
+    function endRound(didSomeoneWinWithScore) {
+        if (round === 1) {
+            // If a team got 15 correct, they win round 1 immediately, don't continue round for others.
+            if (didSomeoneWinWithScore) {
+                // Announce winner, set up Round 2 (with a new set of 15 cards)
+                round = 2;
+                foundCardIds = [];
+                // Draw new 13 cards for round 2
+                gameDeck = selectCardsForRound();
+                deckInPlay = gameDeck.filter(card => !foundCardIds.includes(card.id));
+                deckCurrentIndex = 0;
+
+                // Balancing: Lowest score starts next round (as before)
+                const minScore = Math.min(...teams.map(t => t.score));
+                currentTeamIndex = teams.findIndex(t => t.score === minScore);
+                prepareTurn();
+                return;
+            }
+
+            // If deckInPlay ran out (shouldn't in this case, but fallback)
+            let scoreMsg = "End of Round 1!\n\nCurrent scores:\n";
+            teams.forEach(t => scoreMsg += `${t.name}: ${t.score}\n`);
+
+            round = 2;
+            foundCardIds = [];
+            // Draw new 13 cards for round 2
+            gameDeck = selectCardsForRound();
+            deckInPlay = gameDeck.filter(card => !foundCardIds.includes(card.id));
+            deckCurrentIndex = 0;
+
+            // Balancing: Lowest score starts
+            const minScore = Math.min(...teams.map(t => t.score));
+            currentTeamIndex = teams.findIndex(t => t.score === minScore);
+
+            prepareTurn();
+        } else {
+            endGame();
+        }
+    }
+
+    // ========= PHYSICAL ("timer only") mode logic: unchanged ============
+
+    function startPhysicalGame() {
+        isPhysicalMode = true;
+        initTeams();
+        showScreen('screen-physical');
+        preparePhysicalTurn();
+    }
+
+    function preparePhysicalTurn() {
+        clearInterval(timerInterval);
+        timeLeft = 60;
+        document.getElementById('phy-timer').innerText = timeLeft;
+        document.getElementById('phy-end-turn-panel').style.display = 'none';
+        document.getElementById('btn-phy-start').style.display = 'inline-block';
+        document.getElementById('btn-phy-stop').style.display = 'none';
+
+        const team = teams[currentTeamIndex];
+        document.getElementById('phy-team-name').innerText = team.name;
+        document.getElementById('phy-team-name').style.color = getTeamColor(currentTeamIndex);
+
+        document.getElementById('phy-round-title').innerText = `Round ${round}`;
+
+        let instructions = "";
+        if (round === 1) instructions = "👉 Quiz Mode: Read question, answer True/False.";
+        else instructions = "👉 Guess Mode: Describe the bold word!";
+        document.getElementById('phy-instruction').innerText = instructions;
+    }
+
+    function startPhysicalTimer() {
+        document.getElementById('btn-phy-start').style.display = 'none';
+        document.getElementById('btn-phy-stop').style.display = 'inline-block';
+
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            document.getElementById('phy-timer').innerText = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                if ("vibrate" in navigator) navigator.vibrate([200, 100, 200, 100, 200]);
+                showTimeOverModal(() => {
+                    document.getElementById('phy-end-turn-panel').style.display = 'block';
+                    document.getElementById('btn-phy-stop').style.display = 'none';
+                    // Custom action if needed
+                });
+            }
+        }, 1000);
+    }
+
+    function stopPhysicalTimer() {
+        clearInterval(timerInterval);
+        document.getElementById('btn-phy-start').style.display = 'inline-block';
+        document.getElementById('btn-phy-stop').style.display = 'none';
+        document.getElementById('btn-phy-start').innerText = "Resume ⏳";
+    }
+
+    function nextPhysicalTurn() {
+        currentTeamIndex = (currentTeamIndex + 1) % teams.length;
+        preparePhysicalTurn();
+    }
+
+    function endPhysicalRound() {
+        showScreen('screen-home');
+    }
+
+    // ============================================
+    // === SHARED END GAME ===
+    // ============================================
+
+    function getTeamColor(index) {
+        const colors = ['#00ff41', '#00b8ff', '#ff00de'];
+        return colors[index % colors.length];
+    }
+
+    // Modified endGame logic for égalité
+    function endGame() {
+        showScreen('screen-end');
+
+        const scoresDiv = document.getElementById('final-scores');
+        scoresDiv.innerHTML = "<h3>Final Ranking</h3>";
+
+        const sortedTeams = [...teams].sort((a, b) => b.score - a.score);
+
+        sortedTeams.forEach((team, index) => {
+            let medal = "";
+            if (index === 0) medal = "🥇 ";
+            if (index === 1) medal = "🥈 ";
+            if (index === 2) medal = "🥉 ";
+
+            scoresDiv.innerHTML += `<p style="font-size:1.2em; border-bottom:1px solid #333; padding:5px;">
+                ${medal} <strong>${team.name}</strong>: ${team.score} pts
+            </p>`;
+        });
+
+        // Egalité logic
+        const topScore = sortedTeams[0].score;
+        const tiedTeams = sortedTeams.filter(t => t.score === topScore);
+
+        if (tiedTeams.length === 1) {
+            document.getElementById('winner-text').innerText = `Victory for ${tiedTeams[0].name}!`;
+        } else {
+            // Show all winners with égalité
+            let tieNames = tiedTeams.map(t => t.name).join(' & ');
+            document.getElementById('winner-text').innerText = `Égalité: ${tieNames} !`;
+        }
+    }
+</script>
+</body>
+</html>
